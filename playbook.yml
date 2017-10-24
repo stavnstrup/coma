@@ -1,0 +1,81 @@
+---
+- hosts: default
+  vars_files:
+    - vars.yml
+  # remote_user: vagrant
+  become: true
+  handlers:
+    - name: restart neo4j
+      service: "name=neo4j state=restarted"
+
+  tasks:
+    - name: Add the Neo Technologies Apt signing key
+      apt_key:
+        url: https://debian.neo4j.org/neotechnology.gpg.key
+        state: present
+
+    # Add  Oracle Java repository into sources list.
+    - apt_repository:
+        repo: ppa:webupd8team/java
+        state: present
+
+    # Add Neo repository into sources list.
+    - apt_repository:
+        repo: deb http://debian.neo4j.org/repo stable/
+        state: present
+
+    # --------------
+    # Upgrade stuff
+    # --------------
+
+    - name: Only run "update_cache=yes" if the last one is more than 3600 seconds ago
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    # ---------------------
+    # Install Packages
+    # ---------------------
+
+    - name: Accept Java 8 Licence
+      shell: echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | tee /etc/oracle-java-8-licence-acceptance | /usr/bin/debconf-set-selections
+      args:
+        creates: /etc/oracle-java-8-licence-acceptance
+
+    - name: Install packages
+      apt: pkg={{ item }} state=installed
+      with_items:
+        - oracle-java8-installer
+        - ca-certificates
+        - oracle-java8-set-default
+        - neo4j=3.2.6
+
+    # ----------------------------
+    # Use standard password neo4j
+    # ----------------------------
+
+    # We need to wait until Neo4j is up and running
+    - name: Wait until the neo4j file auth is present before continuing
+      wait_for:
+        path: /var/lib/neo4j/data/dbms/auth
+
+    - name: Use standard password neo4j
+      lineinfile:
+        dest: /var/lib/neo4j/data/dbms/auth
+        regexp: '^neo4j'
+        line: 'neo4j:SHA-256,51CC9E4B848E576232F43700E640BB5D90E8C25B48E058EEA139EF8ED5E4624C,23E23F6640D322F31487C14A6C950D92:'
+        group: neo4j
+        owner: neo4j
+        state: present
+
+    # ------------------------------------
+    # Allow Incoming connections to Neo4j
+    # ------------------------------------
+
+    - name: Enable remote connections
+      lineinfile:
+        dest: /etc/neo4j/neo4j.conf
+        regexp: '^#dbms.connectors.default_listen_address'
+        line: 'dbms.connectors.default_listen_address=0.0.0.0'
+        state: present
+      notify: restart neo4j
