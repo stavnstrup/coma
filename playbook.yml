@@ -68,9 +68,9 @@
         owner: neo4j
         state: present
 
-    # ------------------------------------
-    # Allow Incoming connections to Neo4j
-    # ------------------------------------
+    # ---------------------------------------------------
+    # Expose Neo4j to the host, for development purposes
+    # ---------------------------------------------------
 
     - name: Enable remote connections
       lineinfile:
@@ -79,3 +79,13 @@
         line: 'dbms.connectors.default_listen_address=0.0.0.0'
         state: present
       notify: restart neo4j
+
+    - name: Disable security authentication
+      lineinfile:
+        dest: /etc/neo4j/neo4j.conf
+        regexp: '^#dbms.security.auth_enabled'
+        line: 'dbms.security.auth_enabled=false'
+        state: present
+      notify: restart neo4j
+
+#dbms.security.auth_enabled=false
