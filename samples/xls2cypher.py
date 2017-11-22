@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Transform XSLS sheets to CYPHER
+
 from openpyxl import load_workbook
 
 wb = load_workbook('sample1.xlsx', True)
@@ -17,10 +19,8 @@ for wsname in sheetnames:
             if ws.max_column > 1:
                 print (' { ', end='')
                 for c in range(2, ws.max_column+1):
-                    print (ws.cell(row=1, column=c).value, end='')
-                    print (': \'', end='')
-                    print (ws.cell(row=r, column=c).value, end='')
-                    print ('\'', end='')
+                    print (ws.cell(row=1, column=c).value, ': \'', end='')
+                    print (ws.cell(row=r, column=c).value, '\'', sep='', end='')
                     if c < ws.max_column:
                         print (', ', end='')
                 print (' }', end='')
