@@ -10,7 +10,7 @@ sheetnames = wb.sheetnames
 
 for wsname in sheetnames:
     ws=wb.get_sheet_by_name(wsname)
-    print ('Debug:', wsname, 'r:', ws.max_row, 'c:', ws.max_column)
+#    print ('Debug:', wsname, 'r:', ws.max_row, 'c:', ws.max_column)
     (graphelement,objectname) = ws.title.split('$')
     if graphelement == 'Node':
         for r in range(2, ws.max_row+1):
